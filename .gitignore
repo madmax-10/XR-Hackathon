@@ -112,3 +112,23 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# VS Code and JetBrains Rider
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+.AppleDouble
+._*
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
