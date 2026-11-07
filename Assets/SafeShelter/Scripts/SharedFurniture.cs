@@ -11,6 +11,7 @@ namespace SafeShelter
         Quaternion initialRotation;
         NetworkFurniture networkFurniture;
         public bool CanEdit => isActiveAndEnabled && (networkFurniture == null || networkFurniture.CanEdit);
+        public bool IsPresent => isActiveAndEnabled && (networkFurniture == null || networkFurniture.IsPresent);
         public event Action<SharedFurniture> PoseChanged;
 
         void Awake()
