@@ -44,7 +44,7 @@ try {
     )) -WindowStyle Hidden -PassThru
     Wait-ForMarker 'host-pass' 120
     Wait-ForMarker 'client-pass' 120
-    Write-Output 'PASS: late join, spawn, client write rejection, live movement/rotation, removal, reset, disconnect and reload.'
+    Write-Output 'PASS: late join, spawn, client write rejection, live movement/rotation, removal, reset, keep-clear zones, disconnect and reload.'
     Write-Output "Logs: $resultsPath"
 }
 finally {
