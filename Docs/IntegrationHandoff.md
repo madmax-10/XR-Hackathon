@@ -145,3 +145,19 @@ This does not establish headset rendering, controller input, teleportation or ph
 Future zone marking can send two world-space floor Vector3 points to an ownership-independent
 server RPC on a shared NetworkBehaviour. Validate sender/points on the host there. This task adds no
 zone/constraint implementation; Floor layer, controller interaction and world coordinates remain available.
+## Combined branch
+
+`new-main` combines local integration work with `origin/main` keep-clear constraints.
+The integration scene remains the default launch scene; DesktopNetworkTest is also enabled
+for network scene lookup and retains the remote ConstraintManager/ZoneDebugView wiring.
+The smoke probe preserves multiple baseline objects, pose/camera/reload checks, and runs
+zone checks when a ConstraintManager is present. Zone marking is not yet wired into the
+integration scene. Validation results above describe the earlier integration builds;
+rebuild before testing this merged source.
+
+Merged-source validation: Unity 6000.3.27f1 compiled and built the Windows network test
+successfully (`Temp/MergeNetworkBuild.log`). The rebuilt two-process network test passed
+late join, spawn, client write rejection, movement/rotation, removal/reset, keep-clear
+zone replication/client requests, disconnect and reload. Logs:
+`Temp/NetworkingSmoke-5986466ada1d4dcdb810ff2046ba0ff1/`.
+The merged integration scene and Quest APK were not rebuilt in this merge pass.

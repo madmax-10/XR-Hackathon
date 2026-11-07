@@ -39,6 +39,7 @@ namespace SafeShelter.Editor
             {
                 EditorSceneManager.OpenScene(NetworkScene);
                 EnsureBuildScene();
+                EnsureConstraints(SceneManager.GetActiveScene());
                 SaveValidatedNetworkAssets();
                 ValidateNetworkTest();
                 return;
@@ -86,10 +87,39 @@ namespace SafeShelter.Editor
             serializedLayout.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.SaveScene(scene, NetworkScene);
             EnsureBuildScene();
+            EnsureConstraints(SceneManager.GetActiveScene());
             AssetDatabase.SaveAssets();
             SaveValidatedNetworkAssets();
             ValidateNetworkTest();
             Debug.Log("Networking test created. Press Play, then Start Host. Local DesktopTest is preserved.");
+        }
+
+        /// <summary>Adds the keep-clear zone objects once; existing hand-wired objects are left alone.</summary>
+        static void EnsureConstraints(Scene scene)
+        {
+            if (FindInScene<ConstraintManager>(scene).Length > 0) return;
+            var layout = FindInScene<FurnitureLayout>(scene).Single();
+            var planner = FindInScene<DesktopPlanner>(scene).Single();
+            var floor = new SerializedObject(planner).FindProperty("placementSurface").objectReferenceValue as Collider;
+            if (floor == null) throw new InvalidOperationException("The planner needs its Placement Surface floor collider.");
+
+            var constraintsObject = new GameObject("Constraints");
+            SceneManager.MoveGameObjectToScene(constraintsObject, scene);
+            constraintsObject.AddComponent<NetworkObject>();
+            var constraints = constraintsObject.AddComponent<ConstraintManager>();
+            SetReference(constraints, "hallFloor", floor);
+            SetReference(constraints, "layout", layout);
+            SetReference(planner, "constraints", constraints);
+
+            var bed = AssetDatabase.LoadAssetAtPath<GameObject>(NetworkPrefab);
+            var viewObject = new GameObject("ZoneDebugView");
+            SceneManager.MoveGameObjectToScene(viewObject, scene);
+            var view = viewObject.AddComponent<ZoneDebugView>();
+            SetReference(view, "constraints", constraints);
+            SetReference(view, "material", bed.GetComponentInChildren<Renderer>().sharedMaterial);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("Added ConstraintManager and ZoneDebugView to the networking test.");
         }
 
         static T[] FindInScene<T>(Scene scene) where T : Component => scene.GetRootGameObjects()
@@ -143,6 +173,10 @@ namespace SafeShelter.Editor
             var net = FindInScene<NetworkFurniture>(scene).Single();
             if (net.GetComponent<NetworkObject>() == null || net.GetComponent<NetworkTransform>() == null)
                 throw new InvalidOperationException("The bed is missing networking components.");
+            var constraints = FindInScene<ConstraintManager>(scene);
+            if (constraints.Length != 1 || new SerializedObject(constraints[0].GetComponent<NetworkObject>())
+                    .FindProperty("GlobalObjectIdHash").longValue == 0)
+                throw new InvalidOperationException("Network test needs exactly one ConstraintManager with a scene NetworkObject hash.");
         }
 
         [MenuItem("Tools/SafeShelter/Build Windows Networking Test")]

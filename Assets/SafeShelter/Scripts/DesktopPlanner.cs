@@ -17,10 +17,14 @@ namespace SafeShelter
         SharedFurniture selected;
         bool dragging;
         bool placingBed;
+        bool markingZone;
+        bool hasFirstCorner;
+        Vector3 firstCorner;
         Vector3 grabOffset;
 
         [SerializeField] SessionController session;
-        Rect Panel => new Rect(12, session == null ? 12 : 209, 390, 225);
+        [SerializeField] ConstraintManager constraints;
+        Rect Panel => new Rect(12, session == null ? 12 : 209, 390, constraints == null ? 225 : 310);
 
         void Awake()
         {
@@ -35,13 +39,14 @@ namespace SafeShelter
 
         void Update()
         {
-            if (!layout.CanEdit) { dragging = false; placingBed = false; selected = null; return; }
+            if (!layout.CanEdit) { dragging = false; placingBed = false; CancelZone(); selected = null; return; }
             var mouse = Mouse.current;
             if (mouse == null || !Application.isFocused) { dragging = false; return; }
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
                 placingBed = false;
+                CancelZone();
                 dragging = false;
                 selected = null;
                 return;
@@ -56,6 +61,16 @@ namespace SafeShelter
             if (mouse.leftButton.wasPressedThisFrame && !overUI)
             {
                 dragging = false;
+                if (markingZone)
+                {
+                    var zoneRay = plannerCamera.ScreenPointToRay(point);
+                    if (placementSurface != null && placementSurface.Raycast(zoneRay, out var cornerHit, 1000f))
+                    {
+                        if (!hasFirstCorner) { firstCorner = cornerHit.point; hasFirstCorner = true; }
+                        else { constraints.RequestZone(firstCorner, cornerHit.point); CancelZone(); }
+                    }
+                    return;
+                }
                 if (placingBed)
                 {
                     var placementRay = plannerCamera.ScreenPointToRay(point);
@@ -84,7 +99,8 @@ namespace SafeShelter
             if (dragging && selected != null && !overUI && TryFloorPoint(point, out var destination))
                 selected.MoveTo(destination + grabOffset);
 
-            if (!overUI && keyboard != null && keyboard.rKey.wasPressedThisFrame && selected != null && !placingBed)
+            if (!overUI && keyboard != null && keyboard.rKey.wasPressedThisFrame && selected != null &&
+                !placingBed && !markingZone)
                 selected.Rotate90();
         }
 
@@ -108,10 +124,24 @@ namespace SafeShelter
         public void BeginAddBed()
         {
             if (layout == null || !layout.CanAddBed || placementSurface == null) return;
+            CancelZone();
             dragging = false;
             selected = null;
             placingBed = true;
         }
+
+        /// <summary>Debug marking through the same request path as the Quest inspector.</summary>
+        public void BeginMarkZone()
+        {
+            if (constraints == null || placementSurface == null || !layout.CanEdit) return;
+            placingBed = false;
+            dragging = false;
+            selected = null;
+            markingZone = true;
+            hasFirstCorner = false;
+        }
+
+        void CancelZone() { markingZone = false; hasFirstCorner = false; }
 
         public void RemoveSelected()
         {
@@ -121,7 +151,7 @@ namespace SafeShelter
             dragging = false;
         }
 
-        void OnDisable() { dragging = false; placingBed = false; selected = null; }
+        void OnDisable() { dragging = false; placingBed = false; CancelZone(); selected = null; }
         void OnApplicationFocus(bool hasFocus) { if (!hasFocus) dragging = false; }
 
         void OnGUI()
@@ -132,7 +162,9 @@ namespace SafeShelter
             if (!layout.CanEdit) GUILayout.Label("Editing is available on the connected host only.");
             GUILayout.Label("Left drag: move    R: rotate 90°");
             GUILayout.Label("Right drag: orbit    Wheel: zoom");
-            GUILayout.Label(placingBed ? "Click the floor to place a bed. Esc: cancel" :
+            GUILayout.Label(markingZone ? (hasFirstCorner ? "Click the opposite zone corner. Esc: cancel" :
+                    "Click the first keep-clear corner. Esc: cancel") :
+                placingBed ? "Click the floor to place a bed. Esc: cancel" :
                 selected == null ? "Click a bed to select" : $"Selected: {selected.name}");
             GUI.enabled = layout != null && layout.CanAddBed && placementSurface != null;
             if (GUILayout.Button("Add Bed")) BeginAddBed();
@@ -140,6 +172,17 @@ namespace SafeShelter
             if (GUILayout.Button("Remove Selected")) RemoveSelected();
             GUI.enabled = layout.CanEdit;
             if (GUILayout.Button("Reset Layout")) ResetLayout();
+            if (constraints != null)
+            {
+                var zone = constraints.CurrentZone;
+                GUI.enabled = true;
+                GUILayout.Label(!zone.IsActive ? "Keep-clear zone: none" :
+                    zone.HasConflict ? "Keep-clear zone: BLOCKED (red)" : "Keep-clear zone: clear (green)");
+                GUI.enabled = layout.CanEdit && placementSurface != null && !markingZone;
+                if (GUILayout.Button("Mark Keep-Clear Zone (debug)")) BeginMarkZone();
+                GUI.enabled = layout.CanEdit && zone.IsActive;
+                if (GUILayout.Button("Clear Zone")) constraints.RequestClearZone();
+            }
             GUI.enabled = true;
             GUILayout.EndArea();
         }

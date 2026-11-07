@@ -29,6 +29,16 @@ namespace SafeShelter
         public bool CanEdit => isActiveAndEnabled && (session == null || session.CanEditFurniture);
         public bool CanAddBed => CanEdit && bedPrefab != null && bedPrefab.gameObject.activeSelf;
 
+        /// <summary>Starting and added furniture, including items currently removed from the layout.</summary>
+        public IEnumerable<SharedFurniture> Furniture
+        {
+            get
+            {
+                foreach (var item in initialFurniture) if (item != null) yield return item;
+                foreach (var item in addedFurniture) if (item != null) yield return item;
+            }
+        }
+
         public bool Contains(SharedFurniture item)
         {
             return CanEdit && item != null && item.CanEdit &&
