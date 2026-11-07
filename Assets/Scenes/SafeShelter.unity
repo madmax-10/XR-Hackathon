@@ -443,7 +443,7 @@ GameObject:
   - component: {fileID: 92857850}
   - component: {fileID: 92857849}
   - component: {fileID: 92857848}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Wall_East
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2089,7 +2089,7 @@ GameObject:
   - component: {fileID: 315211061}
   - component: {fileID: 315211060}
   - component: {fileID: 315211059}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Bed_03
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4351,7 +4351,7 @@ GameObject:
   - component: {fileID: 498013625}
   - component: {fileID: 498013624}
   - component: {fileID: 498013623}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Bed_04
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6461,7 +6461,7 @@ GameObject:
   - component: {fileID: 759133477}
   - component: {fileID: 759133476}
   - component: {fileID: 759133475}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Wall_West
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7672,7 +7672,7 @@ GameObject:
   - component: {fileID: 868963152}
   - component: {fileID: 868963151}
   - component: {fileID: 868963150}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Wall_North_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8376,7 +8376,7 @@ GameObject:
   - component: {fileID: 964358534}
   - component: {fileID: 964358533}
   - component: {fileID: 964358532}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Partition_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9294,6 +9294,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Teleport Anchor
       objectReference: {fileID: 0}
+    - target: {fileID: 8134302614855669005, guid: c4a645c929982ea41a52b5037ee7d94d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8134302614855669011, guid: c4a645c929982ea41a52b5037ee7d94d, type: 3}
       propertyPath: m_RootOrder
       value: -1
@@ -9664,7 +9668,7 @@ GameObject:
   - component: {fileID: 1149702909}
   - component: {fileID: 1149702908}
   - component: {fileID: 1149702907}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Wall_South
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11587,6 +11591,14 @@ PrefabInstance:
     - target: {fileID: 4750419575962273167, guid: 77e7c27b2c5525e4aa8cc9f99d654486, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -23
+      objectReference: {fileID: 0}
+    - target: {fileID: 5484926215961174697, guid: 77e7c27b2c5525e4aa8cc9f99d654486, type: 3}
+      propertyPath: m_RaycastMask.m_Bits
+      value: 2147485440
+      objectReference: {fileID: 0}
+    - target: {fileID: 7917674757885691568, guid: 77e7c27b2c5525e4aa8cc9f99d654486, type: 3}
+      propertyPath: m_RaycastMask.m_Bits
+      value: 2147485440
       objectReference: {fileID: 0}
     - target: {fileID: 8806329115733545877, guid: 77e7c27b2c5525e4aa8cc9f99d654486, type: 3}
       propertyPath: m_Name
@@ -13593,7 +13605,7 @@ GameObject:
   - component: {fileID: 1679223758}
   - component: {fileID: 1679223757}
   - component: {fileID: 1679223756}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Bed_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -13974,7 +13986,7 @@ GameObject:
   - component: {fileID: 1732086040}
   - component: {fileID: 1732086039}
   - component: {fileID: 1732086038}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Bed_02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14086,7 +14098,7 @@ GameObject:
   - component: {fileID: 1740040287}
   - component: {fileID: 1740040286}
   - component: {fileID: 1740040285}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Partition_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14720,7 +14732,7 @@ GameObject:
   - component: {fileID: 1858496774}
   - component: {fileID: 1858496773}
   - component: {fileID: 1858496772}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Wall_North_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -17130,7 +17142,7 @@ GameObject:
   - component: {fileID: 2128588531}
   - component: {fileID: 2128588530}
   - component: {fileID: 2128588529}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: SupplyTable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
