@@ -10,9 +10,9 @@ Implemented: local desktop camera orbit/zoom, explicit furniture selection, floo
 URP materials and primitive geometry. Existing interactable prefabs are XR tutorial objects,
 so their grab, tutorial, and affordance scripts are not appropriate dependencies for this bed.
 
-This milestone is **local only**. There is no host startup, synchronized bed, zone request
-handler, overlap status, debug marker, or bot implementation yet. It does not meet the plans'
-Friday cross-device acceptance criterion. Those are later increments in the user's sequence.
+This scene is **local only**. The subsequent networking increment is documented separately in
+NetworkingMilestone.md. Zone requests, overlap status, debug marking, and bots are still deferred.
+The local scene alone does not meet the plans' cross-device acceptance criterion.
 
 Inspected both supplied plans, the repository plan, package manifest/lock, scene contents,
 template/sample scripts and prefabs, and project/build settings. No AGENTS.md was found in
@@ -20,7 +20,8 @@ the repository (including hidden directories) or its ancestor locations. The ini
 tree was clean. No existing SafeShelter scripts, furniture, NetworkManager, or main
 SafeShelter scene were present. Existing scenes are BasicScene and SampleScene plus samples.
 
-Project version: **6000.3.27f1**. Installed editor found: **6000.3.28f1**. Existing packages
+Project version: **6000.3.27f1**. At the initial inspection only **6000.3.28f1** was installed.
+The matching editor was subsequently installed and used. Existing packages at initial inspection
 include URP 17.3.0, Input System 1.20.1, XRI 3.5.1, and OpenXR 1.17.1. NGO and Unity
 Transport are absent; Multiplayer Center does not supply either runtime. Input handling is
 already set to the new Input System. No package, project setting, existing scene, or existing
@@ -130,11 +131,8 @@ serialized references, unique asset GUIDs, resolved project-local asset referenc
 file IDs, and no changes to existing tracked files. The inherited URP additional-light script
 reference requires Unity package import to resolve. Source/document whitespace checks pass.
 
-Not verified: Unity import/compilation, rendering, Input System behavior, Editor Play mode,
-Windows build, actual reset/drag interactions, networking, or Quest behavior. The matching
-Unity editor is not installed in this environment; the available newer editor was not used to
-upgrade or rewrite teammate assets. Run the manual tests above in the matching editor.
-
-Next increment under IntegrationContract.md: one authoritative Windows host and one synchronized
-bed, tested with a second desktop client before Quest; then zone requests, overlap state, and
-mouse debug marking. Bots remain deferred.
+The initial delivery had not been run in Unity. The user subsequently opened Unity 6000.3.27f1
+and confirmed the local planner workflow works, including placement and manipulation. The
+local milestone does not establish Windows build, networking, or Quest behavior. The networking increment
+is now documented in NetworkingMilestone.md. Zone requests, overlap state, and mouse debug
+marking follow that increment; bots remain deferred.

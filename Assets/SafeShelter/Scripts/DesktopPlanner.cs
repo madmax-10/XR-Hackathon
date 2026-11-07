@@ -19,7 +19,8 @@ namespace SafeShelter
         bool placingBed;
         Vector3 grabOffset;
 
-        Rect Panel => new Rect(12, 12, 390, 225);
+        [SerializeField] SessionController session;
+        Rect Panel => new Rect(12, session == null ? 12 : 209, 390, 225);
 
         void Awake()
         {
@@ -34,6 +35,7 @@ namespace SafeShelter
 
         void Update()
         {
+            if (!layout.CanEdit) { dragging = false; placingBed = false; selected = null; return; }
             var mouse = Mouse.current;
             if (mouse == null || !Application.isFocused) { dragging = false; return; }
             var keyboard = Keyboard.current;
@@ -46,6 +48,7 @@ namespace SafeShelter
             }
             var point = mouse.position.ReadValue();
             bool overUI = (showControls && Panel.Contains(new Vector2(point.x, Screen.height - point.y))) ||
+                (session != null && session.Panel.Contains(new Vector2(point.x, Screen.height - point.y))) ||
                 (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
             if (mouse.leftButton.wasReleasedThisFrame || !mouse.leftButton.isPressed) dragging = false;
             if (mouse.rightButton.isPressed) { dragging = false; return; }
@@ -125,7 +128,8 @@ namespace SafeShelter
         {
             if (!showControls) return;
             GUILayout.BeginArea(Panel, GUI.skin.box);
-            GUILayout.Label("SafeShelter — Desktop milestone 1 (local)");
+            GUILayout.Label(session == null ? "SafeShelter — Local Planner" : "SafeShelter — Host Planner");
+            if (!layout.CanEdit) GUILayout.Label("Editing is available on the connected host only.");
             GUILayout.Label("Left drag: move    R: rotate 90°");
             GUILayout.Label("Right drag: orbit    Wheel: zoom");
             GUILayout.Label(placingBed ? "Click the floor to place a bed. Esc: cancel" :
@@ -134,8 +138,9 @@ namespace SafeShelter
             if (GUILayout.Button("Add Bed")) BeginAddBed();
             GUI.enabled = selected != null && !placingBed;
             if (GUILayout.Button("Remove Selected")) RemoveSelected();
-            GUI.enabled = true;
+            GUI.enabled = layout.CanEdit;
             if (GUILayout.Button("Reset Layout")) ResetLayout();
+            GUI.enabled = true;
             GUILayout.EndArea();
         }
 

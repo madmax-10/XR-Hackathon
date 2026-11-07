@@ -52,9 +52,9 @@ prefab edits; B supplies visuals and A maintains behavior/networking.
 
 ## What has been checked
 
-Only source and scene/prefab reference checks have run here. Unity import/compilation,
-Play mode, and the interactions above still require testing in the matching editor.
-There is no networking yet. After this local test works, the next engineering step is
-making a host-created bed appear on a second connected application, before testing Quest.
+The user has now opened the matching editor and confirmed the local interactions above work.
+Source and scene/prefab reference checks also passed. This does not establish Quest behavior.
+This local scene is intentionally offline. The separate networking increment and two-copy
+test steps are now documented in NetworkingMilestone.md; validate that before testing Quest.
 
 The fuller Inspector wiring and integration instructions are in DesktopMilestone1.md.
