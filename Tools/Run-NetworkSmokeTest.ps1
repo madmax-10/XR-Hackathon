@@ -33,7 +33,7 @@ function Wait-ForMarker([string]$Marker, [int]$TimeoutSeconds) {
 }
 
 try {
-    $commonArgs = @('-batchmode', '-nographics', '--safeshelter-port', "$Port",
+    $commonArgs = @('-batchmode', '-nographics', '--safeshelter-address', '127.0.0.1', '--safeshelter-port', "$Port",
         '--safeshelter-smoke', ('"{0}"' -f $resultsPath))
     $probeHost = Start-Process -FilePath $testExecutable -ArgumentList ($commonArgs + @(
         '--safeshelter-role', 'host', '-logFile', ('"{0}"' -f (Join-Path $resultsPath 'host.log'))

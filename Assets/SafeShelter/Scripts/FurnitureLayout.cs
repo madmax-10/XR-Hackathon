@@ -41,6 +41,7 @@ namespace SafeShelter
                 !float.IsFinite(position.y) || !float.IsFinite(position.z)) return null;
 
             // Instantiate at its resting pose so SharedFurniture.Awake captures the right height.
+            position.y = bedPrefab.transform.position.y;
             var item = Instantiate(bedPrefab, position, Quaternion.identity);
             if (session != null) item.GetComponent<NetworkObject>().Spawn();
             addedFurniture.Add(item);

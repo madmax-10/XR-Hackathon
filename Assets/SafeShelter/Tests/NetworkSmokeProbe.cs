@@ -15,6 +15,9 @@ namespace SafeShelter.Tests
         bool host;
         SessionController session;
         FurnitureLayout layout;
+        int initialCount;
+        Vector3 initialPosition;
+        Quaternion initialRotation;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Install()
@@ -35,6 +38,15 @@ namespace SafeShelter.Tests
             Application.logMessageReceived += CaptureError;
             session = FindFirstObjectByType<SessionController>();
             layout = FindFirstObjectByType<FurnitureLayout>();
+            if (!PlatformRigSelector.IsQuest &&
+                (FindObjectsByType<Camera>(FindObjectsSortMode.None).Count(c => c.isActiveAndEnabled) != 1 ||
+                 FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Count(a => a.isActiveAndEnabled) != 1))
+                throw new InvalidOperationException("Desktop requires one active camera and AudioListener.");
+            var initialBeds = FindObjectsByType<NetworkFurniture>(FindObjectsSortMode.None);
+            initialCount = initialBeds.Length;
+            var initialBed = initialBeds.OrderBy(b => b.name, StringComparer.Ordinal).First();
+            initialPosition = initialBed.transform.position;
+            initialRotation = initialBed.transform.rotation;
             yield return Await(() => session != null && (host ? session.CanEditFurniture :
                 NetworkManager.Singleton != null && NetworkManager.Singleton.IsConnectedClient), "connection");
             if (host) yield return HostTest();
@@ -46,23 +58,23 @@ namespace SafeShelter.Tests
 
         NetworkFurniture[] Beds() => FindObjectsByType<NetworkFurniture>(FindObjectsSortMode.None)
             .Where(bed => bed.IsSpawned).ToArray();
-        NetworkFurniture Baseline() => Beds().Single(bed => bed.NetworkObject.IsSceneObject == true);
+        NetworkFurniture Baseline() => Beds().Where(bed => bed.NetworkObject.IsSceneObject == true).OrderBy(b => b.name, StringComparer.Ordinal).First();
         bool Has(string marker) => File.Exists(Path.Combine(folder, marker));
         void Mark(string marker) => File.WriteAllText(Path.Combine(folder, marker), "observed");
         static bool Near(Vector3 a, Vector3 b) => Vector3.Distance(a, b) < .04f;
 
         IEnumerator HostTest()
         {
-            yield return Await(() => Beds().Length == 1, "initial scene bed spawned");
+            yield return Await(() => Beds().Length == initialCount, "initial scene bed spawned");
             var baseline = Baseline().GetComponent<SharedFurniture>();
             // Change state before the other process joins, exercising late-join synchronization.
-            baseline.MoveTo(new Vector3(2, 0, 1));
+            baseline.MoveTo(new Vector3(2, initialPosition.y, 1));
             baseline.Rotate90();
             var added = layout.AddBed(new Vector3(-2, 0, -1));
             if (added == null) throw new InvalidOperationException("Host failed to spawn an added bed.");
             Mark("host-ready");
             yield return Await(() => Has("client-ready"), "client sees late-join state and rejects local edits");
-            baseline.MoveTo(new Vector3(-1, 0, 2));
+            baseline.MoveTo(new Vector3(-1, initialPosition.y, 2));
             baseline.Rotate90();
             Mark("host-moved");
             yield return Await(() => Has("client-moved"), "client receives live movement/rotation");
@@ -76,9 +88,9 @@ namespace SafeShelter.Tests
 
         IEnumerator ClientTest()
         {
-            yield return Await(() => Beds().Length == 2 &&
-                Near(Baseline().transform.position, new Vector3(2, 0, 1)) &&
-                Quaternion.Angle(Baseline().transform.rotation, Quaternion.Euler(0, 90, 0)) < 1 &&
+            yield return Await(() => Beds().Length == initialCount + 1 &&
+                Near(Baseline().transform.position, new Vector3(2, initialPosition.y, 1)) &&
+                Quaternion.Angle(Baseline().transform.rotation, Quaternion.Euler(0, 90, 0) * initialRotation) < 1 &&
                 Beds().Any(bed => Near(bed.transform.position, new Vector3(-2, 0, -1))), "late-join snapshot");
             var baseline = Baseline().GetComponent<SharedFurniture>();
             if (layout.CanEdit || baseline.CanEdit) throw new InvalidOperationException("Client has write authority.");
@@ -93,17 +105,17 @@ namespace SafeShelter.Tests
                 Quaternion.Angle(baseline.transform.rotation, beforeRotation) > .1f || !Baseline().IsPresent)
                 throw new InvalidOperationException("Client mutation was not rejected.");
             Mark("client-ready");
-            yield return Await(() => Has("host-moved") && Near(baseline.transform.position, new Vector3(-1, 0, 2)) &&
-                Quaternion.Angle(baseline.transform.rotation, Quaternion.Euler(0, 180, 0)) < 1, "live transform");
+            yield return Await(() => Has("host-moved") && Near(baseline.transform.position, new Vector3(-1, initialPosition.y, 2)) &&
+                Quaternion.Angle(baseline.transform.rotation, Quaternion.Euler(0, 180, 0) * initialRotation) < 1, "live transform");
             Mark("client-moved");
-            yield return Await(() => Beds().Length == 1, "runtime despawn");
+            yield return Await(() => Beds().Length == initialCount, "runtime despawn");
             Mark("client-despawned");
             yield return Await(() => !Baseline().IsPresent &&
                 baseline.GetComponentsInChildren<Renderer>().All(r => !r.enabled) &&
                 baseline.GetComponentsInChildren<Collider>().All(c => !c.enabled), "baseline hidden on client");
             Mark("client-hidden");
-            yield return Await(() => Baseline().IsPresent && Near(baseline.transform.position, Vector3.zero) &&
-                Quaternion.Angle(baseline.transform.rotation, Quaternion.identity) < 1 &&
+            yield return Await(() => Baseline().IsPresent && Near(baseline.transform.position, initialPosition) &&
+                Quaternion.Angle(baseline.transform.rotation, initialRotation) < 1 &&
                 baseline.GetComponentsInChildren<Renderer>().All(r => r.enabled) &&
                 baseline.GetComponentsInChildren<Collider>().All(c => c.enabled), "reset to original layout");
             Mark("client-reset");

@@ -13,7 +13,7 @@ namespace SafeShelter.Editor
     {
         public int callbackOrder => 0;
         static bool IsUnusedInferenceShader(UnityEngine.Object shader) =>
-            DesktopNetworkingSetup.IsBuildingNetworkTest && AssetDatabase.GetAssetPath(shader)
+            (DesktopNetworkingSetup.IsBuildingNetworkTest || IntegrationSetup.IsBuildingIntegration) && AssetDatabase.GetAssetPath(shader)
                 .StartsWith("Packages/com.unity.ai.inference/", StringComparison.Ordinal);
 
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
