@@ -11,6 +11,7 @@ using Unity.Netcode.Components;
 using Unity.Netcode.Transports.UTP;
 using Unity.XR.CoreUtils;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Gravity;
 
 namespace SafeShelter.Editor
 {
@@ -18,6 +19,18 @@ namespace SafeShelter.Editor
     {
         public const string ScenePath = "Assets/Scenes/SafeShelter_Integration.unity";
         static T[] All<T>(Scene scene) where T : Component => scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<T>(true)).ToArray();
+        [MenuItem("Tools/SafeShelter/Fix XR Floor Grounding")]
+        public static void FixXRFloorGrounding()
+        {
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var gravity = All<GravityProvider>(scene).Single();
+            gravity.useGravity = true;
+            gravity.sphereCastLayerMask |= 1 << 8;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(gravity);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Validate();
+        }
         static void Reference(UnityEngine.Object target, string field, UnityEngine.Object value)
         {
             var data = new SerializedObject(target);
@@ -162,6 +175,9 @@ namespace SafeShelter.Editor
             var floor = All<Collider>(scene).SingleOrDefault(c => c.name == "HallFloor");
             if (floor == null || floor.gameObject.layer != 8 || LayerMask.LayerToName(8) != "Floor")
                 throw new InvalidOperationException("HallFloor requires a collider on the Floor layer (8).");
+            var gravity = RequireOne<GravityProvider>(scene);
+            if (!gravity.enabled || !gravity.useGravity || (gravity.sphereCastLayerMask.value & (1 << 8)) == 0)
+                throw new InvalidOperationException("XR GravityProvider must be enabled and include the Floor layer in its ground check.");
             var floorSize = floor.bounds.size;
             if (Mathf.Abs(floorSize.x - 24f) > 0.25f || Mathf.Abs(floorSize.z - 16f) > 0.25f)
             {
