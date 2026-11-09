@@ -221,6 +221,7 @@ namespace SafeShelter.Editor
             }
             if (brokenReferences > 0) throw new Exception("Broken references: " + brokenReferences);
             Debug.Log("INTEGRATION VALIDATION PASS: references, unique network identities; furniture=" + registered.Count);
+            CrowdValidation.Validate(scene);
         }
         public static bool IsBuildingIntegration { get; private set; }
         public static void RepairAndBuildWindows() { Repair(); BuildWindows(); }
@@ -229,11 +230,17 @@ namespace SafeShelter.Editor
             Validate();
             var backend = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone);
             var fullscreen = PlayerSettings.fullScreenMode;
+            var resizable = PlayerSettings.resizableWindow;
+            var width = PlayerSettings.defaultScreenWidth;
+            var height = PlayerSettings.defaultScreenHeight;
             try
             {
                 IsBuildingIntegration = true;
                 PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
                 PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+                PlayerSettings.resizableWindow = true;
+                PlayerSettings.defaultScreenWidth = 1366;
+                PlayerSettings.defaultScreenHeight = 768;
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] { ScenePath }, target = BuildTarget.StandaloneWindows64,
                     locationPathName = "Builds/Integration/SafeShelter.exe", options = BuildOptions.Development });
                 if (report.summary.result != BuildResult.Succeeded) throw new Exception("Windows integration build failed.");
@@ -243,6 +250,9 @@ namespace SafeShelter.Editor
                 IsBuildingIntegration = false;
                 PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, backend);
                 PlayerSettings.fullScreenMode = fullscreen;
+                PlayerSettings.resizableWindow = resizable;
+                PlayerSettings.defaultScreenWidth = width;
+                PlayerSettings.defaultScreenHeight = height;
             }
         }
         public static void BuildAndroid()

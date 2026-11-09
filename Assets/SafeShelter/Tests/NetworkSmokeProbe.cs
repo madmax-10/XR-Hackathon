@@ -33,6 +33,7 @@ namespace SafeShelter.Tests
         static void Install()
         {
             var args = Environment.GetCommandLineArgs();
+            if (args.Contains("--safeshelter-crowd")) return;
             for (int i = 0; i + 1 < args.Length; i++)
                 if (args[i] == "--safeshelter-smoke")
                 {

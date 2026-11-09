@@ -12,6 +12,7 @@ namespace SafeShelter
         [SerializeField] SharedFurniture[] initialFurniture = new SharedFurniture[0];
         [SerializeField] SessionController session;
         readonly List<SharedFurniture> addedFurniture = new List<SharedFurniture>();
+        public event System.Action Changed;
 
         void Awake()
         {
@@ -55,12 +56,14 @@ namespace SafeShelter
             var item = Instantiate(bedPrefab, position, Quaternion.identity);
             if (session != null) item.GetComponent<NetworkObject>().Spawn();
             addedFurniture.Add(item);
+            Changed?.Invoke();
             return item;
         }
 
         public void Remove(SharedFurniture item)
         {
             if (!isActiveAndEnabled || !Contains(item)) return;
+            Changed?.Invoke();
             if (session != null)
             {
                 if (addedFurniture.Remove(item)) item.GetComponent<NetworkObject>().Despawn(true);
@@ -75,6 +78,7 @@ namespace SafeShelter
         public void ResetLayout()
         {
             if (!CanEdit) return;
+            Changed?.Invoke();
             foreach (var item in addedFurniture)
             {
                 if (item == null) continue;

@@ -15,6 +15,9 @@ namespace SafeShelter
         [SerializeField] LayerMask selectionMask = ~0;
         [SerializeField] bool showControls = true;
         SharedFurniture selected;
+        SharedFurniture highlighted;
+        Renderer[] highlightedRenderers;
+        MaterialPropertyBlock[] savedProperties;
         bool dragging;
         bool placingBed;
         bool markingZone;
@@ -52,7 +55,7 @@ namespace SafeShelter
                 return;
             }
             var point = mouse.position.ReadValue();
-            bool overUI = (showControls && Panel.Contains(new Vector2(point.x, Screen.height - point.y))) ||
+            bool overUI = CrowdDesktopControls.PointerOverPanel || (showControls && Panel.Contains(new Vector2(point.x, Screen.height - point.y))) ||
                 (session != null && session.Panel.Contains(new Vector2(point.x, Screen.height - point.y))) ||
                 (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
             if (mouse.leftButton.wasReleasedThisFrame || !mouse.leftButton.isPressed) dragging = false;
@@ -151,7 +154,37 @@ namespace SafeShelter
             dragging = false;
         }
 
-        void OnDisable() { dragging = false; placingBed = false; CancelZone(); selected = null; }
+        void OnDisable() { dragging = false; placingBed = false; CancelZone(); selected = null; RestoreHighlight(); }
+
+        void LateUpdate()
+        {
+            if (highlighted == selected) return;
+            RestoreHighlight();
+            highlighted = selected;
+            if (highlighted == null) return;
+            highlightedRenderers = highlighted.GetComponentsInChildren<Renderer>();
+            savedProperties = new MaterialPropertyBlock[highlightedRenderers.Length];
+            for (int i = 0; i < highlightedRenderers.Length; i++)
+            {
+                var renderer = highlightedRenderers[i];
+                savedProperties[i] = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(savedProperties[i]);
+                var selectionProperties = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(selectionProperties);
+                selectionProperties.SetColor("_BaseColor", Color.Lerp(renderer.sharedMaterial.color, Color.yellow, .45f));
+                renderer.SetPropertyBlock(selectionProperties);
+            }
+        }
+
+        void RestoreHighlight()
+        {
+            if (highlightedRenderers != null)
+                for (int i = 0; i < highlightedRenderers.Length; i++)
+                    if (highlightedRenderers[i] != null) highlightedRenderers[i].SetPropertyBlock(savedProperties[i]);
+            highlightedRenderers = null;
+            savedProperties = null;
+            highlighted = null;
+        }
         void OnApplicationFocus(bool hasFocus) { if (!hasFocus) dragging = false; }
 
         void OnGUI()
