@@ -296,21 +296,27 @@ B’s scene after merge must have:
 | `maxDistance` | 30 |
 | `previewHeight` | 0.02 |
 
+Assign the active aiming rays and include Floor (layer 8) in their raycast masks. The marker reads the configured select, activate, or UI press action on a floor hit and skips rays pointing at UI. The first hit shows a local corner preview. The second submits the rectangle to the host.
+
 ### Status block — fill when YOU finish
 
 ```
-[ ] NetworkSupplyTable.prefab ready
-[ ] NetworkCrate.prefab ready
-[ ] NetworkMedicalTable.prefab ready
-[ ] NetworkChair.prefab ready
-[ ] SafeShelterNetworkPrefabs.asset updated
-[ ] QuestKeepClearMarker.cs compiles; fields match §5 exactly
-[ ] ZoneDebugView unchanged or noted: _______________
-[ ] Validate menu path: _______________
-[ ] DesktopNetworkTest red→green proven
-[ ] Smoke PASS path/log: _______________
-[ ] Zero edits to SafeShelter_Integration.unity
+[x] NetworkSupplyTable.prefab ready
+[x] NetworkCrate.prefab ready
+[x] NetworkMedicalTable.prefab ready
+[x] NetworkChair.prefab ready
+[x] SafeShelterNetworkPrefabs.asset updated
+[x] QuestKeepClearMarker.cs compiles with the exact §5 field names
+[x] ZoneDebugView unchanged
+[x] Validate menu path: Tools > SafeShelter > Validate Integration Scene
+[x] DesktopNetworkTest red→green, clear, and reset verified on host and client
+[x] Two-process Windows smoke PASS (Logs/AgentA-Smoke/host.log and client.log)
+[x] Zero edits to SafeShelter_Integration.unity
 ```
+
+All five furniture prefabs were opened and checked in Unity for dimensions, resting height, colliders, and server-authoritative transform settings. NetworkBed keeps its existing asset identity and materials with a centered root at Y = 0.225 m.
+
+The Windows smoke run used simulated XR select and trigger input on `DesktopNetworkTest`. It verified the local first-corner preview, replicated red and green renderer colors, clear, and restoration of the desktop baseline bed while despawning an added bed. The 22-prop integration reset and physical Quest test are part of the morning merge.
 
 ---
 
@@ -330,13 +336,13 @@ Min side 0.1 m; host validates; one zone; last valid wins; late join gets snapsh
 
 ## 11. Acceptance (Agent A done)
 
-- [ ] All prefabs open; Server NetworkTransform; correct resting Y  
-- [ ] Prefab list updated  
-- [ ] QuestKeepClearMarker field names match §5 exactly  
-- [ ] DesktopNetworkTest mark→red→green→clear  
-- [ ] Smoke PASS  
-- [ ] §9 status block filled  
-- [ ] **No** integration scene edits  
+- [x] All prefabs open with server-authoritative NetworkTransform and correct resting Y
+- [x] Prefab list updated
+- [x] QuestKeepClearMarker field names match §5 exactly
+- [x] DesktopNetworkTest mark→red→green→clear
+- [x] Smoke PASS
+- [x] §9 status block filled
+- [x] **No** integration scene edits
 
 ---
 

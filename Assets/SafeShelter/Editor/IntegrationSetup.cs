@@ -10,6 +10,7 @@ using Unity.Netcode;
 using Unity.Netcode.Components;
 using Unity.Netcode.Transports.UTP;
 using Unity.XR.CoreUtils;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace SafeShelter.Editor
 {
@@ -130,27 +131,73 @@ namespace SafeShelter.Editor
         [MenuItem("Tools/SafeShelter/Validate Integration Scene")]
         public static void Validate()
         {
-            var scene = SceneManager.GetActiveScene();
-            if (scene.path != ScenePath) scene = EditorSceneManager.OpenScene(ScenePath);
-            if (All<NetworkManager>(scene).Length != 1 || All<SessionController>(scene).Length != 1 || All<DesktopPlanner>(scene).Length != 1 || All<XROrigin>(scene).Length != 1)
-                throw new Exception("Expected one manager, session, planner and original XR origin.");
-            var manager = All<NetworkManager>(scene).Single();
-            var layout = All<FurnitureLayout>(scene).Single();
+            var scene = SceneManager.GetSceneByPath(ScenePath);
+            bool openedForValidation = !scene.isLoaded;
+            if (openedForValidation) scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+            try { ValidateScene(scene); }
+            finally { if (openedForValidation) EditorSceneManager.CloseScene(scene, true); }
+        }
+
+        static T RequireOne<T>(Scene scene) where T : Component
+        {
+            var components = All<T>(scene);
+            if (components.Length != 1)
+                throw new InvalidOperationException($"Expected exactly one {typeof(T).Name}, found {components.Length}.");
+            return components[0];
+        }
+
+        static UnityEngine.Object ReadReference(UnityEngine.Object target, string field) =>
+            new SerializedObject(target).FindProperty(field).objectReferenceValue;
+
+        static void ValidateScene(Scene scene)
+        {
+            var manager = RequireOne<NetworkManager>(scene);
+            var session = RequireOne<SessionController>(scene);
+            var planner = RequireOne<DesktopPlanner>(scene);
+            var rig = RequireOne<XROrigin>(scene);
+            var layout = RequireOne<FurnitureLayout>(scene);
+            var constraints = RequireOne<ConstraintManager>(scene);
+            var view = RequireOne<ZoneDebugView>(scene);
+            var marker = RequireOne<QuestKeepClearMarker>(scene);
+            var floor = All<Collider>(scene).SingleOrDefault(c => c.name == "HallFloor");
+            if (floor == null || floor.gameObject.layer != 8 || LayerMask.LayerToName(8) != "Floor")
+                throw new InvalidOperationException("HallFloor requires a collider on the Floor layer (8).");
+            var floorSize = floor.bounds.size;
+            if (Mathf.Abs(floorSize.x - 24f) > 0.25f || Mathf.Abs(floorSize.z - 16f) > 0.25f)
+            {
+                Debug.LogWarning($"HallFloor is {floorSize.x:0.##} × {floorSize.z:0.##} m. Expected 24 × 16 m.", floor);
+                throw new InvalidOperationException("HallFloor does not match the locked hall footprint.");
+            }
+            if (ReadReference(constraints, "hallFloor") != floor || ReadReference(constraints, "layout") != layout ||
+                constraints.GetComponent<NetworkObject>() == null)
+                throw new InvalidOperationException("ConstraintManager requires HallFloor, FurnitureLayout, and a NetworkObject.");
+            if (ReadReference(planner, "constraints") != constraints || ReadReference(view, "constraints") != constraints ||
+                ReadReference(view, "material") == null)
+                throw new InvalidOperationException("Wire DesktopPlanner and ZoneDebugView to ConstraintManager, and assign the zone material.");
+            var leftRay = ReadReference(marker, "leftRay") as XRRayInteractor;
+            var rightRay = ReadReference(marker, "rightRay") as XRRayInteractor;
+            if (ReadReference(marker, "constraints") != constraints || leftRay == null || rightRay == null ||
+                leftRay == rightRay || !marker.transform.IsChildOf(rig.transform) ||
+                new SerializedObject(marker).FindProperty("floorMask").intValue != (1 << 8))
+                throw new InvalidOperationException("QuestKeepClearMarker requires the constraints, two distinct rays, and Floor-only mask under the XR origin.");
+
             var layoutData = new SerializedObject(layout);
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/SafeShelter/Prefabs/NetworkBed.prefab");
-            if (layoutData.FindProperty("bedPrefab").objectReferenceValue != prefab.GetComponent<SharedFurniture>() ||
-                !manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Any(list => list.PrefabList.Any(entry => entry.Prefab == prefab)))
+            if (prefab == null || layoutData.FindProperty("bedPrefab").objectReferenceValue != prefab.GetComponent<SharedFurniture>() ||
+                !manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Any(list => list != null && list.PrefabList.Any(entry => entry.Prefab == prefab)))
                 throw new Exception("NetworkBed must be both the layout prefab and a registered network prefab.");
             var initial = layoutData.FindProperty("initialFurniture");
-            if (initial.arraySize != All<SharedFurniture>(scene).Length) throw new Exception("Starting furniture registration is incomplete.");
+            const int baselineCount = 22;
+            if (initial.arraySize != baselineCount || All<SharedFurniture>(scene).Length != baselineCount)
+                throw new InvalidOperationException("The scene and FurnitureLayout each require exactly 22 baseline furniture items.");
+            var registered = new System.Collections.Generic.HashSet<SharedFurniture>();
             for (int i = 0; i < initial.arraySize; i++)
-                if (!(initial.GetArrayElementAtIndex(i).objectReferenceValue is SharedFurniture item) || item.GetComponent<NetworkFurniture>() == null)
-                    throw new Exception("Starting furniture must reference local network furniture.");
-            if (All<SessionController>(scene).Single().gameObject != manager.gameObject)
+                if (!(initial.GetArrayElementAtIndex(i).objectReferenceValue is SharedFurniture item) ||
+                    item.gameObject.scene != scene || !registered.Add(item) || item.GetComponent<NetworkFurniture>() == null ||
+                    item.GetComponent<NetworkObject>() == null)
+                    throw new InvalidOperationException($"Initial Furniture element {i} must reference a distinct scene item with NetworkFurniture and NetworkObject.");
+            if (session.gameObject != manager.gameObject)
                 throw new Exception("Session must remain active independently of DesktopRig.");
-            var floor = All<Transform>(scene).Single(t => t.name == "HallFloor");
-            if (floor.gameObject.layer != LayerMask.NameToLayer("Floor") || floor.GetComponent<Collider>() == null)
-                throw new Exception("HallFloor must preserve Floor layer and collider.");
             if (manager.NetworkConfig.NetworkTransport != manager.GetComponent<UnityTransport>() || !manager.NetworkConfig.EnableSceneManagement)
                 throw new Exception("Invalid scene-managed LAN transport configuration.");
             var hashes = All<NetworkObject>(scene).Select(n => new SerializedObject(n).FindProperty("GlobalObjectIdHash").longValue).ToArray();
@@ -173,7 +220,7 @@ namespace SafeShelter.Editor
                 }
             }
             if (brokenReferences > 0) throw new Exception("Broken references: " + brokenReferences);
-            Debug.Log("INTEGRATION VALIDATION PASS: references, unique network identities; furniture=" + hashes.Length);
+            Debug.Log("INTEGRATION VALIDATION PASS: references, unique network identities; furniture=" + registered.Count);
         }
         public static bool IsBuildingIntegration { get; private set; }
         public static void RepairAndBuildWindows() { Repair(); BuildWindows(); }
