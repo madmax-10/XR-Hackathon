@@ -2,6 +2,8 @@
 
 **Paused at the user's request on November 9, 2026 (America/Chicago).** Do not continue builds, tests or edits until the user resumes. Dev A has been notified to stop the in-progress crowd test and pause. No active Codex goal or automation was created.
 
+Pause confirmed: A stopped its smoke players, the runner has exited, and no Unity or SafeShelter process remained at the final check. The latest crowd run is intentionally interrupted, not accepted as a pass or product failure. [Dev A's detailed resume notes](RESUME-DEV-A.md) record the exact completed checkpoints and remaining input edge. `Docs/lastPastB.md` is preserved in the follow-up resume documentation commit; older references below to that brief being untracked describe the earlier snapshot.
+
 ## Repository and commits
 
 - Old location: `C:/Users/adhik/Desktop/XR-Hackathon`
