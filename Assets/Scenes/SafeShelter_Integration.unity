@@ -20452,6 +20452,10 @@ PrefabInstance:
       propertyPath: m_SphereCastLayerMask.m_Bits
       value: 307
       objectReference: {fileID: 0}
+    - target: {fileID: 7260069061857253776, guid: 77e7c27b2c5525e4aa8cc9f99d654486, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7917674757885691568, guid: 77e7c27b2c5525e4aa8cc9f99d654486, type: 3}
       propertyPath: m_RaycastMask.m_Bits
       value: 2147485440

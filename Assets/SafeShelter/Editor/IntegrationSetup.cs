@@ -24,7 +24,7 @@ namespace SafeShelter.Editor
         {
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             var gravity = All<GravityProvider>(scene).Single();
-            gravity.useGravity = true;
+            gravity.useGravity = false;
             gravity.sphereCastLayerMask |= 1 << 8;
             PrefabUtility.RecordPrefabInstancePropertyModifications(gravity);
             EditorSceneManager.MarkSceneDirty(scene);
@@ -176,8 +176,8 @@ namespace SafeShelter.Editor
             if (floor == null || floor.gameObject.layer != 8 || LayerMask.LayerToName(8) != "Floor")
                 throw new InvalidOperationException("HallFloor requires a collider on the Floor layer (8).");
             var gravity = RequireOne<GravityProvider>(scene);
-            if (!gravity.enabled || !gravity.useGravity || (gravity.sphereCastLayerMask.value & (1 << 8)) == 0)
-                throw new InvalidOperationException("XR GravityProvider must be enabled and include the Floor layer in its ground check.");
+            if (gravity.useGravity || (gravity.sphereCastLayerMask.value & (1 << 8)) == 0)
+                throw new InvalidOperationException("XR GravityProvider must have gravity off (flat hall) and include the Floor layer in its ground check.");
             var floorSize = floor.bounds.size;
             if (Mathf.Abs(floorSize.x - 24f) > 0.25f || Mathf.Abs(floorSize.z - 16f) > 0.25f)
             {
