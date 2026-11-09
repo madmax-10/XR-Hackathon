@@ -17,6 +17,7 @@ namespace SafeShelter
         Camera view;
         CrowdSceneBindings crowd;
         float initialDistance;
+        bool orbiting;
 
         void Awake()
         {
@@ -29,17 +30,24 @@ namespace SafeShelter
         {
             if (focus == null) return;
             var mouse = Mouse.current;
-            if (mouse != null && Application.isFocused && !CrowdDesktopControls.PointerOverPanel &&
-                !new Rect(12, 12, 390, 520).Contains(new Vector2(mouse.position.ReadValue().x, Screen.height - mouse.position.ReadValue().y)))
+            if (mouse != null && Application.isFocused)
             {
-                if (mouse.rightButton.isPressed)
+                var point = mouse.position.ReadValue();
+                bool pointerInViewport = !CrowdDesktopControls.PointerOverPanel &&
+                    !new Rect(12, 12, 390, 520).Contains(new Vector2(point.x, Screen.height - point.y));
+                if (mouse.rightButton.wasPressedThisFrame)
+                    orbiting = pointerInViewport;
+                if (mouse.rightButton.wasReleasedThisFrame || !mouse.rightButton.isPressed)
+                    orbiting = false;
+                if (orbiting)
                 {
                     var delta = mouse.delta.ReadValue();
                     yaw += delta.x * orbitSensitivity;
                     pitch = Mathf.Clamp(pitch - delta.y * orbitSensitivity, 25f, 85f);
                 }
-                distance = Mathf.Clamp(distance - mouse.scroll.ReadValue().y * zoomSensitivity,
-                    distanceLimits.x, distanceLimits.y);
+                if (pointerInViewport)
+                    distance = Mathf.Clamp(distance - mouse.scroll.ReadValue().y * zoomSensitivity,
+                        distanceLimits.x, distanceLimits.y);
             }
             var rotation = Quaternion.Euler(pitch, yaw, 0f);
             float viewDistance = distance;
@@ -70,5 +78,7 @@ namespace SafeShelter
             else view.rect = new Rect(0, 0, 1, 1);
             transform.SetPositionAndRotation(focus.position - rotation * Vector3.forward * viewDistance, rotation);
         }
+
+        void OnApplicationFocus(bool hasFocus) { if (!hasFocus) orbiting = false; }
     }
 }
